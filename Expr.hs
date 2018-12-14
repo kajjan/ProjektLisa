@@ -16,7 +16,7 @@ data Expr = Num Double
 
 
 -----------------------------------------------
--- B
+-- B som i bajs
 
 -- | Showing expressions
 showExpr :: Expr -> String
