@@ -16,7 +16,7 @@ data Expr = Num Double
 
 
 -----------------------------------------------
--- B som i bajs
+-- B som i bäst
 
 -- | Showing expressions
 showExpr :: Expr -> String
