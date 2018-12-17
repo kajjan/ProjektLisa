@@ -72,3 +72,11 @@ readAndDraw input canvas =
                                               UI.fillText ((showExpr . simplify ) exp) (10,canHeight/2) canvas
 
                             _ -> UI.fillText "WRONG" (10,canHeight/2) canvas
+
+                            
+zoom  ::  Elem -> Elem -> Double -> Canvas -> IO ()
+zoom input scale change canvas = 
+    do
+        s <- getProp scale "value"
+        setProp scale "value" (show ((read s::Double)*change))
+        readAndDraw input scale canvas                            
