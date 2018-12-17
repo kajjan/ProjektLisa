@@ -16,9 +16,9 @@ data Expr = Num Double
 
 
 -----------------------------------------------
--- B som i bäst
+-- B 
 
--- | Showing expressions
+-- | Showing expressions 
 showExpr :: Expr -> String
 showExpr (Num n)     = show n
 showExpr (Var c)     = "x"

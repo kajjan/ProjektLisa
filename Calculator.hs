@@ -11,6 +11,8 @@ import Expr
 import Data.Maybe
 import Text.Read hiding (get)
 
+origScale = 0.04
+
 canWidth,canHeight :: Num a => a
 canWidth  = 300
 canHeight = 300
