@@ -57,35 +57,18 @@ points e scale (w,h) =
         realToPix y = ((-y) / scale) + (h' / 2)
 
 
-readAndDraw :: Element -> Double -> Canvas -> UI ()
-readAndDraw input scale canvas =
-  do s <- get value input
-
-     set UI.fillStyle (UI.solidColor (UI.RGB 255 255 255)) (pure canvas)
-     UI.fillRect (0,0) canvasWidth canvasHeight canvas
+readAndDraw :: Element -> Canvas -> UI ()
+readAndDraw input canvas =
+  do -- Get the current formula (a String) from the input element
+     formula <- get value input
+     -- Clear the canvas
+     clearCanvas canvas
+     -- The following code draws the formula text in the canvas and a blue line.
+     -- It should be replaced with code that draws the graph of the function.
      set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
+     case readExpr formula of 
+                            (Just exp) -> do
+                                              path "blue" (points exp origScale (canHeight,canHeight)) canvas
+                                              UI.fillText ((showExpr . simplify ) exp) (10,canHeight/2) canvas
 
-     case readExpr s of
-      Just expr -> do
-        plotExpr expr
-
-      Nothing -> do
-        return()
-
-      where
-        plotExpr expr1 = (id
-          . drawLines
-          . linez expr1 scale) (canvasWidth, canvasHeight)
-
-        --drawLines 
-        drawLines [] = return ()
-        drawLines ((p1, p2):xs) = do
-            UI.beginPath canvas
-
-            UI.moveTo p1 canvas
-            UI.lineTo p2 canvas
-
-            UI.closePath canvas
-            UI.stroke canvas
-
-            drawLines xs
+                            _ -> UI.fillText "WRONG" (10,canHeight/2) canvas
