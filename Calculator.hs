@@ -14,21 +14,21 @@ import Text.Read hiding (get)
 -------------------------------------------------------------------------------------------------------------------------
 -- Setting up the helper functions for the plotter
 
-canvasWidth,canvasHeight :: Num a => a                                           -- size for canvas elements
-canvasWidth  = 300
-canvasHeight = 300
+canWidth,canHeight :: Num a => a                                           -- size for canvas elements
+canWidth  = 350
+canHeight = 350
 
 
 pixToReal :: Double -> Double
-pixToReal x = (x - fromIntegral canvasWidth / 2) * 0.04
+pixToReal x = (x - fromIntegral canWidth / 2) * 0.05
 
 realToPix :: Double -> Double
-realToPix x = x / 0.04 + fromIntegral canvasWidth / 2
+realToPix x = x / 0.05 + fromIntegral canWidth / 2
 
 points :: Expr -> Double -> (Int,Int) -> [UI.Point]
 points expr scale (width, height) = map point [0..width]
     where
-        point :: Int -> (Double, Double)
+        point :: Int -> (Double, Double)  -- denna borde vi nog förstå 
         point x = (fromIntegral x, pointY x)
         pointY = realToPix
             . negate
@@ -38,18 +38,21 @@ points expr scale (width, height) = map point [0..width]
             . pixToReal
             . fromIntegral
 
+-- Somehowe moves the lines/dots? We should write something else            
 lineStep :: [a] -> [(a, a)]
 lineStep (x:y:[]) = [(x, y)]
-lineStep (x:y:ys) = (x, y) : lineStep (y:ys)
+lineStep (x:y:xs) = (x, y) : lineStep (y:xs)
 
-linez :: Expr -> Double -> (Int,Int) -> [(UI.Point, UI.Point)]
-linez expr scale canSize = lineStep $ points expr scale canSize
+-- Help for the one above?
+lines :: Expr -> Double -> (Int,Int) -> [(UI.Point, UI.Point)]
+lines expr scale canSize = lineStep $ points expr scale canSize
 
-readDouble :: String -> Maybe Double
-readDouble = readMaybe
+-- THIS MIGHT BE ONÖDIG testade ett ta bort och inget verkade hända?
+--readDouble :: String -> Maybe Double
+--readDouble = readMaybe
 
 convertInput :: String -> String -> Maybe (Expr, Double)
-convertInput expText expScale = (,) <$> readExpr expText <*> readDouble expScale
+convertInput expText expScale = (,) <$> readExpr expText <*> expScale
 -----------------------------------------------------------------------------------------------------------------------
 
 main :: IO ()
@@ -76,11 +79,11 @@ setup window =
      getBody window #+ [pure top,column [pure canvas, pure formula, pure draw, row[pure scaleUp,pure scaleDown,pure normScale],pure diff,pure clr]]  
 
      -- Styling
-     getBody window # set style [("backgroundColor","lightblue"),
+     getBody window # set style [("backgroundColor","Black"),
                                  ("textAlign","center")]
      pure canvas    # set style [("textAlign","center")]
-     pure input     # set style [("fontSize","14pt")]
-     pure clr       # set style [("backgroundColor","grey")]
+     pure input     # set style [("fontSize","16pt")]
+     pure clr       # set style [("backgroundColor","light grey")]
 
      -- Interaction
      on UI.click     draw  $ \ _ -> readAndDraw input 1.0 canvas               --draws the plot for the given function
@@ -117,7 +120,7 @@ readAndDraw input scale canvas =
       where
         plotExpr expr1 = (id
           . drawLines
-          . linez expr1 scale) (canvasWidth, canvasHeight)
+          . lines expr1 scale) (canvasWidth, canvasHeight)
 
         --drawLines 
         drawLines [] = return ()
