@@ -14,42 +14,47 @@ import Text.Read hiding (get)
 -------------------------------------------------------------------------------------------------------------------------
 -- Setting up the helper functions for the plotter
 
-canvasWidth,canvasHeight :: Num a => a                                           -- size for canvas elements
-canvasWidth  = 300
-canvasHeight = 300
+canWidth,canHeight :: Num a => a                                           -- size for canvas elements
+canWidth  = 350
+canHeight = 350
 
-
-pixToReal :: Double -> Double
-pixToReal x = (x - fromIntegral canvasWidth / 2) * 0.04
 
 realToPix :: Double -> Double
-realToPix x = x / 0.04 + fromIntegral canvasWidth / 2
+realToPix r = r / 0.05 + fromIntegral canWidth / 2
+
+pixToReal :: Double -> Double
+pixToReal p = (p - fromIntegral canWidth / 2) * 0.05
+
 
 points :: Expr -> Double -> (Int,Int) -> [UI.Point]
-points expr scale (width, height) = map point [0..width]
+points expr sl (width, height) = map point [0..width]
     where
-        point :: Int -> (Double, Double)
+        point :: Int -> (Double, Double)  -- denna borde vi nog förstå 
         point x = (fromIntegral x, pointY x)
         pointY = realToPix
             . negate
-            . (*scale)
+            . (*sl)
             . (eval expr)
-            . (/scale)
+            . (/sl)
             . pixToReal
             . fromIntegral
 
+-- Somehowe moves the lines/dots? We should write something else            
 lineStep :: [a] -> [(a, a)]
 lineStep (x:y:[]) = [(x, y)]
-lineStep (x:y:ys) = (x, y) : lineStep (y:ys)
+lineStep (x:y:xs) = (x, y) : lineStep (y:xs)
 
-linez :: Expr -> Double -> (Int,Int) -> [(UI.Point, UI.Point)]
-linez expr scale canSize = lineStep $ points expr scale canSize
+-- Help for the one above?
+lines' :: Expr -> Double -> (Int,Int) -> [(UI.Point, UI.Point)]
+lines' expr sl canSize = lineStep $ points expr sl canSize
 
+-- THIS MIGHT BE ONÖDIG testade ett ta bort och inget verkade hända?
 readDouble :: String -> Maybe Double
 readDouble = readMaybe
 
 convertInput :: String -> String -> Maybe (Expr, Double)
-convertInput expText expScale = (,) <$> readExpr expText <*> readDouble expScale
+convertInput exprText exprScale = (,) <$> readExpr exprText <*> readDouble exprScale
+
 -----------------------------------------------------------------------------------------------------------------------
 
 main :: IO ()
@@ -58,29 +63,29 @@ main = startGUI defaultConfig setup
 setup :: Window -> UI ()
 setup window =
   do -- Elements
-     canvas     <- mkCanvas canvasWidth canvasHeight   -- The drawing area
-     fx         <- mkHTML "<i>f</i>(<i>x</i>)="  -- The text "f(x)="
-     input      <- mkInput 20 "x"                -- The formula input
-     draw       <- mkButton "Draw Graph"         -- The draw button
-     diff       <- mkButton "Differentiate"      -- The differentiate button
-     clr        <- mkButton "Clear Graph"        -- Clears Graph
-     scaleUp    <- mkButton "Scale up"           -- Scale Up Graph
-     scaleDown  <- mkButton "Scale Down"         -- Scale Down Graph
-     normScale  <- mkButton "Normal Scale"       -- Scale to normal
-     top        <- UI.div                        -- Page Heading
+     canvas     <- mkCanvas canWidth canHeight   -- Drawing area
+     fx         <- mkHTML "<i>f</i>(<i>x</i>)="  -- Text "f(x)="
+     input      <- mkInput 20 "x"                -- Formula input
+     draw       <- mkButton "Draw Graph"         -- Draw button
+     diff       <- mkButton "Differentiate"      -- Differentiate button
+     clr        <- mkButton "Clear Graph"        -- Clears graph
+     zoomOut    <- mkButton "Zoom out"           -- Zoom out graph 
+     zoomIn     <- mkButton "Zoom in"            -- Zoom in graph
+     --normScale  <- mkButton "Normal"             -- Scale to normal     -- TA BORT?
+     top        <- UI.div                        -- Page heading
                    #+  [ UI.h1     # set UI.text "Graph Generator"]
-     return window # set UI.title "Functional Programming - Lab 4"
+     return window # set UI.title "TDA452 - Calculator lab"
      let scaler = 1.0    
      -- Layout
      formula <- row [pure fx,pure input]
-     getBody window #+ [pure top,column [pure canvas, pure formula, pure draw, row[pure scaleUp,pure scaleDown,pure normScale],pure diff,pure clr]]  
+     getBody window #+ [pure top,column [pure canvas, pure formula, pure draw, row[pure zoomIn, pure zoomOut],pure diff,pure clr]]  
 
      -- Styling
-     getBody window # set style [("backgroundColor","lightblue"),
+     getBody window # set style [("backgroundColor","yellow"),
                                  ("textAlign","center")]
      pure canvas    # set style [("textAlign","center")]
-     pure input     # set style [("fontSize","14pt")]
-     pure clr       # set style [("backgroundColor","grey")]
+     pure input     # set style [("fontSize","20pt")]
+     pure clr       # set style [("backgroundColor","light grey")]
 
      -- Interaction
      on UI.click     draw  $ \ _ -> readAndDraw input 1.0 canvas               --draws the plot for the given function
@@ -92,9 +97,9 @@ setup window =
                                       UI.clearCanvas canvas
                                       set value ("x") (pure input)
 
-     on UI.click     scaleUp   $ \_ -> readAndDraw input (scaler/0.5) canvas   --zooms in the plot by a factor of 2
-     on UI.click     scaleDown $ \_ -> readAndDraw input (scaler*0.5) canvas   --zooms out of the plot by a factor of 2
-     on UI.click     normScale $ \_ -> readAndDraw input (scaler) canvas       --normalizes the zoomed plots
+     on UI.click     zoomIn   $ \_ -> readAndDraw input (scaler/0.5) canvas   --zooms in the plot by a factor of 2
+     on UI.click     zoomOut $ \_ -> readAndDraw input (scaler*0.5) canvas   --zooms out of the plot by a factor of 2
+    -- on UI.click     normScale $ \_ -> readAndDraw input (scaler) canvas       --normalizes the zoomed plots
      on valueChange' input     $ \ _ -> readAndDraw input 1.0 canvas           
 
 ---------------------------------------------------------------------------------------------------------------------------
@@ -104,7 +109,7 @@ readAndDraw input scale canvas =
   do s <- get value input
 
      set UI.fillStyle (UI.solidColor (UI.RGB 255 255 255)) (pure canvas)
-     UI.fillRect (0,0) canvasWidth canvasHeight canvas
+     UI.fillRect (0,0) canWidth canHeight canvas
      set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
 
      case readExpr s of
@@ -117,7 +122,7 @@ readAndDraw input scale canvas =
       where
         plotExpr expr1 = (id
           . drawLines
-          . linez expr1 scale) (canvasWidth, canvasHeight)
+          . lines' expr1 scale) (canWidth, canHeight)
 
         --drawLines 
         drawLines [] = return ()
