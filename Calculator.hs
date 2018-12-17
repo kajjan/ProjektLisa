@@ -41,6 +41,21 @@ setup window =
      on UI.click     draw  $ \ _ -> readAndDraw input canvas
      on valueChange' input $ \ _ -> readAndDraw input canvas
 
+points :: Expr -> Double -> (Int,Int) -> [Point]
+points e scale (w,h) = 
+    zip l (map realToPix (map (eval e) (map pixToReal l)))
+    where
+        l = [0 .. w']
+    
+        w' = fromIntegral w
+        h' = fromIntegral h
+        
+        pixToReal :: Double -> Double
+        pixToReal x = (x - (w' / 2)) * scale
+
+        realToPix :: Double -> Double
+        realToPix y = ((-y) / scale) + (h' / 2)
+
 
 readAndDraw :: Element -> Double -> Canvas -> UI ()
 readAndDraw input scale canvas =
