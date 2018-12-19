@@ -148,25 +148,26 @@ module Expr where
 
     --expr * n & n*m
     simplify' (Mul (Num n) (Num m)) = Num (n*m)
-    simplify' (Mul s' (Num n)) = (Mul (Num n) (simplify s'))
-    simplify' (Mul (Num n) s') = (Mul (simplify s') (Num n))
-    simplify' (Mul e1 e2) = (Mul (simplify e1) (simplify e2))
-
+    simplify' (Mul e1 e2) = if e1 == (Num 0.0) || e2 == (Num 0.0) then simplify (getNotZeroExp e1 e2) else (Mul (simplify e1) (simplify e2))
     simplify' (Sin s') = (Sin (simplify s'))
     simplify' (Cos s') = (Cos (simplify s'))   
+
+    getNotZeroExp :: Expr -> Expr -> Expr
+    getNotZeroExp e1 e2 | e1 == (Num 0.0) = e2
+                        | otherwise = e1
     
     prop_Simplify :: Expr -> Bool
     prop_Simplify s = checkSimplified (simplify s)
 
     checkSimplified :: Expr -> Bool
     checkSimplified (Var s) = True
-    checkSimplified (Num n) = if n == 0.0 then False else True
+    checkSimplified (Num n) = True
     checkSimplified (Mul  _ (Num 1.0)) = False
     checkSimplified (Mul (Num 1.0) _ ) = False
     checkSimplified (Sin (Num 0.0)) = True
     checkSimplified (Cos (Num 0.0)) = True
-    checkSimplified (Add s1 s2) = checkSimplified s1 && checkSimplified s2
-    checkSimplified (Mul s1 s2) = checkSimplified s1 && checkSimplified s2
+    checkSimplified (Add s1 s2) = checkSimplified s1 && checkSimplified s2 && not (simplify (Add s1 s2) == (Num 0.0))
+    checkSimplified (Mul s1 s2) = checkSimplified s1 && checkSimplified s2 && not (simplify (Mul s1 s2) == (Num 0.0))
     checkSimplified (Sin (s1)) = checkSimplified s1 
     checkSimplified (Cos (s1)) = checkSimplified s1 
     
@@ -179,7 +180,7 @@ module Expr where
     differentiate' :: Expr -> Expr
     differentiate' (Num n)     = Num 0.0
     differentiate' (Var x)     = Num 1.0
-    differentiate' (Add e1 e2) = (Add (differentiate' e1) (differentiate' e2))
-    differentiate' (Mul e1 e2) = (Add (Mul e1 (differentiate' e2)) (Mul (differentiate' e1) e2))
-    differentiate' (Sin e)     = (Cos e)
-    differentiate' (Cos e)     = (Mul (Num (-1.0)) (Sin e))
+    differentiate' (Add e1 e2) = Add (differentiate e1) (differentiate e2)
+    differentiate' (Mul e1 e2) = Add (Mul (differentiate e1) e2) (Mul e1 (differentiate e2))
+    differentiate' (Sin e1)    = Mul (Cos e1) (differentiate e1)
+    differentiate' (Cos e1)    = Mul (Mul (Num (-1)) (Sin e1)) (differentiate e1)
