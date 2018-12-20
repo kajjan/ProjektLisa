@@ -18,27 +18,30 @@ canWidth,canHeight :: Num a => a                                           -- si
 canWidth  = 300
 canHeight = 300
 
+-- H 
 
+-- | Converts a pixel x-coordinate to a real x-coordinate
 realToPix :: Double -> Point -> Double -> Double
 realToPix r (x,y) scale = r / (0.04/scale) + x
 
+-- | Converts a real y-coordinate to a pixel y-coordinate
 pixToReal :: Double -> Point -> Double -> Double
 pixToReal p (x,y) scale = negate ((p - y) * (0.04/scale))
 
+-- | Calculates all the points of the graph in terms of pixels
 points :: Expr -> Double -> Point -> (Int,Int) -> [Point]
 points ex scale center (width,height) = map (\x ->
                                       (x,realToPix (eval ex (pixToReal x center scale)) center scale))
                                       [0..(fromIntegral width)]
 
-realToPix :: Double -> Double
-realToPix x = x / 0.05 + fromIntegral canWidth / 2
 
 
+-- | Makes pairs of points to easier draw the lines between them                                     
 lineStep :: [a] -> [(a, a)]
 lineStep (x:y:[]) = [(x, y)]
 lineStep (x:y:xs) = (x, y) : lineStep (y:xs)
 
-
+-- | Makes the graph
 lines' :: Expr -> Double -> (Double, Double) -> (Int,Int) -> [(UI.Point, UI.Point)]
 lines' expr scale center canSize = lineStep $ points expr scale center canSize
 
@@ -66,7 +69,7 @@ setup window =
                                  ("textAlign","center")]
      pure input # set style [("fontSize","14pt")]
 
-     -- Interaction (install event handlers)
+     -- Interaction
      on UI.click     draw    $ \ _ -> readAndDraw input canvas 1.0 (canWidth/2,canHeight/2)
      on valueChange' input   $ \ _ -> readAndDraw input canvas 1.0 (canWidth/2,canHeight/2)
      on UI.click     zoomOut $ \ _ -> readAndDraw input canvas 1.0 (canWidth/2,canHeight/2)
@@ -76,8 +79,8 @@ setup window =
       readAndDraw input canvas 1.0 (canWidth/2,canHeight/2)
 
 ---------------------------------------------------------------------------------------------------------------------------
--- | creates the plot from input and scale | default set to 1 if not zoomed in or out
 
+-- | Draws the graph on the canvas
 readAndDraw :: Element -> Canvas -> Double -> Point -> UI ()
 readAndDraw input canvas scale center =
   do -- Get the current formula (a String) from the input element
